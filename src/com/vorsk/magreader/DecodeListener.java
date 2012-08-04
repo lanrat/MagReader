@@ -68,10 +68,6 @@ class DecodeListener extends AsyncTask<Integer, String, Void> {
 		// for auto detect; used to determine time-stamp of last audio
 		long lastFound = 0;
 		
-		
-		//TODO delete me
-		//PCMLinkedList pcmList_sand = new PCMLinkedList();
-		
 
 		while (isRecording) {
 			// process new audio data
@@ -112,10 +108,13 @@ class DecodeListener extends AsyncTask<Integer, String, Void> {
 					
 					//publishProgress("Size:" +swype.getBinaryList().size());
 					
-					// get the card
-					Card card = new Card(swype.getBinaryList());
+					
 					if (swype.isvalid()){ //TODO this is backwards
 						if (DEBUG) Log.d(TAG, "Swype was valid");
+				
+						// get the card
+						Card card = new Card(swype.getBinaryList());
+						
 						if (card.isValid()){ //possibly check that the string is != null
 							if (DEBUG) Log.d(TAG, "card is valid");
 							publishProgress("Valid Swipe!");
@@ -127,19 +126,6 @@ class DecodeListener extends AsyncTask<Integer, String, Void> {
 						publishProgress(" ------- binary ------------");
 						publishProgress(Swype.binaryString(swype.getBinaryList()));
 						
-						// Test code here
-						//old
-						/*
-						MagDecoder_old old = new MagDecoder_old();
-						publishProgress("------------------------ OLD ----------------------------");
-						publishProgress(old.processCard(pcmList));
-						//sandshrew
-						MagDecoder sand = new MagDecoder();
-						publishProgress("------------------------ SAND ---------------------------");
-						publishProgress(sand.processCard(pcmList_sand));
-						publishProgress("---------------------------------------------------------");
-						*/
-						//end test code
 					}else{
 						publishProgress("Invalid Swipe!");
 					}

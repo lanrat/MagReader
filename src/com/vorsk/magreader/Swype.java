@@ -59,16 +59,10 @@ public class Swype{
 			//the first peak is always useless
 			try{
 				peakList.removeFirst();	
-				//TODO testing twice
 				peakList.removeFirst();
 			}catch (NoSuchElementException e) {
 				//List is empty, do something
 				this.valid = false;
-			}
-			if (peakList.size() < 50) {
-				if (DEBUG) Log.d(TAG, "likely invalid swipe, too short");
-				this.valid = false;
-				//TODO do something here, errors id I process a list that is too short
 			}
 		}
 			
@@ -257,7 +251,7 @@ public class Swype{
 	 */
 	private LinkedList<int[]> findPeaks(LinkedList<Short> pcmList) {
 		//check for bad data
-		if (pcmList == null || pcmList.size() < 10){
+		if (pcmList == null || pcmList.size() < 50){
 			this.valid = false;
 			return null;
 		}

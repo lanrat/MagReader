@@ -34,7 +34,7 @@ public class Card{
 		final public int charOffset;
 		final public char end_char;
 		final public char start_char;
-		final public static char badChar = '|';
+		final public static char badChar = '~';
 		private CardType(int bitSize, int charOffset, char end_char, char start_char){
 			this.bitSize = bitSize;
 			this.charOffset = charOffset;
@@ -60,7 +60,6 @@ public class Card{
 		ascii = decodeBinary(binaryList.listIterator());
 
 		//do a quick check on the validly of the String
-		//TODO uncomment this out
 		
 		if (Card.REVERSE && !this.goodRead) {
 			if (DEBUG) Log.i(TAG, "decode invalid; attempting reverse");
@@ -69,10 +68,11 @@ public class Card{
 			if (!this.goodRead){
 				if (DEBUG) Log.i(TAG, "reverse did not help");
 			}
-		}//*/
+		}
 		
 		//fix returning null reads
 		if (ascii == null){
+			if (DEBUG) Log.d(TAG,"ASCII is null -> bad read");
 			this.goodRead = false;
 		}
 	}
@@ -83,6 +83,13 @@ public class Card{
 	 */
 	public String getASCII(){
 		return this.ascii;
+	}
+	
+	/**
+	 * Shortcut to get the text of the card
+	 */
+	public String toString(){
+		return this.getASCII();
 	}
 
 	/**
@@ -99,6 +106,27 @@ public class Card{
 	 */
 	public LinkedList<Character> getBinaryList(){
 		return this.binaryList;
+	}
+	
+	/**
+	 * Iterates over the first few chars of the binary to determine the card format
+	 * @param binaryList
+	 * @return the card format or null if unknown
+	 */
+	private CardType determineCardType(ListIterator<Character> binaryList){
+		
+		if (binToChar(charSequenceWithoutInc(binaryList,CardType.ALPHA.bitSize),CardType.ALPHA.charOffset,null) == CardType.ALPHA.start_char){
+			if (DEBUG) Log.d(TAG,"Card is ALPHA");
+			return CardType.ALPHA;
+		}else if (binToChar(charSequenceWithoutInc(binaryList,CardType.BCD.bitSize),CardType.BCD.charOffset,null) == CardType.BCD.start_char){
+			if (DEBUG) Log.d(TAG,"Card is BCD");
+			return CardType.BCD;
+		}else{
+			this.goodRead = false;
+			if (DEBUG) Log.d(TAG,"Card Type is Unknown -> bad read");
+			return null;
+		}
+		
 	}
 
 	/**
@@ -121,25 +149,12 @@ public class Card{
 		//output variable to build our ASCII string
 		StringBuilder out = new StringBuilder();
 		
-		//Determine format
-		if (binToChar(charSequenceWithoutInc(binaryList,CardType.ALPHA.bitSize),CardType.ALPHA.charOffset,null) == CardType.ALPHA.start_char){
-			this.format = CardType.ALPHA;
-			//backupIterator(binaryList, CardType.ALPHA.bitSize);
-		}else{
-			//backupIterator(binaryList, CardType.ALPHA.bitSize);
-			if (binToChar(charSequenceWithoutInc(binaryList,CardType.BCD.bitSize),CardType.BCD.charOffset,null) == CardType.BCD.start_char){
-				//backupIterator(binaryList, CardType.ALPHA.bitSize);
-				this.format =  CardType.BCD;
-				//backupIterator(binaryList, CardType.BCD.bitSize);
-			}else{
-				//backupIterator(binaryList, CardType.BCD.bitSize);
-				this.goodRead = false;
-				return "Unknown Card Format";
-			}
+		//get the card format
+		this.format = this.determineCardType(binaryList);
+		if (this.format == null){
+			//if format is unknown, make a good guess
+			this.format = CardType.BCD;
 		}
-		
-		//this.format = CardType.BCD;
-		
 		
 		//variable to hold our calculated LRC
 		boolean[] calcLRC = new boolean[this.format.bitSize];
@@ -149,10 +164,9 @@ public class Card{
 		//while we still have binary data to convert
 		while (binaryList.hasNext()){
 			//get the next char
-			//Log.v(TAG,"BIT_Size: "+this.format.bitSize);
 			char[] binary = charSequence(binaryList, this.format.bitSize);
 			current = binToChar(binary, this.format.charOffset,calcLRC);
-			//Log.e(TAG,"new char: "+current); //TODO RM
+
 			
 
 			//TODO comment out
@@ -180,6 +194,7 @@ public class Card{
 		// LRC checking
 		if (!Arrays.equals(readLRC, finalizeLRC(calcLRC))) {
 			// LRC is invalid
+			if (DEBUG) Log.d(TAG,"LRC Failed -> bad read");
 			this.goodRead = false;
 		}
 
@@ -301,7 +316,8 @@ public class Card{
 	private char binToChar(char[] binary, int offset, boolean[] lrc) {
 		//check for valid parity bit
 		if (!validChar(binary)) {
-			this.goodRead = false;
+			if (DEBUG) Log.d(TAG,"Paridy failed on char -> bad read");
+			//this.goodRead = false;
 			return CardType.badChar;
 		}
 		
